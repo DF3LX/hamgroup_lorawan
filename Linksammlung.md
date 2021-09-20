@@ -14,3 +14,5 @@
         
         https://www.thethingsnetwork.org/forum/t/big-esp32-sx127x-topic-part-3/18436
         
+        https://www.thethingsnetwork.org/forum/t/format-of-keys-and-ids-for-arduino-lmic-libraries-howto/28243
+        
