@@ -12,3 +12,5 @@
 
         https://sbamueller.files.wordpress.com/2018/09/paxcounter_anleitung.pdf
         
+        https://www.thethingsnetwork.org/forum/t/big-esp32-sx127x-topic-part-3/18436
+        
