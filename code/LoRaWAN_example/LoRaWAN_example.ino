@@ -23,7 +23,7 @@ void os_getDevEui (u1_t* buf) { memcpy_P(buf, DEVEUI, 8);}
 static const u1_t PROGMEM APPKEY[16] = { 0xB8, 0x06, 0x9A, 0x45, 0x85, 0x47, 0x3D, 0x47, 0x2C, 0xFD, 0x88, 0x93, 0xD4, 0x86, 0x22, 0xCA };
 void os_getDevKey (u1_t* buf) {  memcpy_P(buf, APPKEY, 16);}
 
-static uint8_t mydata[] = "Hello, world!";
+static uint8_t mydata[] = "";
 static osjob_t sendjob;
 
 // Schedule TX every this many seconds (might become longer due to duty
@@ -116,6 +116,9 @@ void do_send(osjob_t* j){
         // Prepare upstream data transmission at the next possible time.
         LMIC_setTxData2(1, mydata, sizeof(mydata)-1, 0);
         Serial.println(F("Packet queued"));
+        i++;
+        mydata[ 0 ] = i;
+
     }
     // Next TX is scheduled after TX_COMPLETE event.
 }
