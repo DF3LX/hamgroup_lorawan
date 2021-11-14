@@ -1,8 +1,18 @@
-// Based on the LoRaWAN example from Thomas Telkamp and Matthijs 
-// set the frequenzyband to the one you are using inside of the config.h file
+/****************************************
+  DARC-HamGroup LoRaWAN
 
-#include <lmic.h> // LMIC library from the libary-manager
-#include <hal/hal.h> // includet in the lmic library
+  TTGO-Node einfach 1
+
+  einfacher Node - sendet nur einen Fix-Text aus
+
+  Based on the LoRaWAN example from Thomas Telkamp and Matthijs 
+
+  13.11.2021  Felix, D06FP; Jürgen, DL8MA
+
+  http://www.p37.de/LoRaWAN
+*/
+#include <lmic.h>                                                                                             // LMIC library from the libary-manager
+#include <hal/hal.h>                                                                                          // includet in the lmic library
 #include <SPI.h>
 
 // This EUI must be in little-endian format, so least-significant-byte
@@ -23,25 +33,30 @@ void os_getDevEui (u1_t* buf) { memcpy_P(buf, DEVEUI, 8);}
 static const u1_t PROGMEM APPKEY[16] = { ENTERHEREAPPKEY };
 void os_getDevKey (u1_t* buf) {  memcpy_P(buf, APPKEY, 16);}
 
-static uint8_t mydata[] = " ";
-int i = 0;
+static uint8_t mydata[] = "1234 ABCD";                                      // Fixtext der ausgesendet wird
 static osjob_t sendjob;
 
-// Schedule TX every this many seconds (might become longer due to duty
-// cycle limitations).
-const unsigned TX_INTERVAL = 30;
+int i = 0;
+
+const unsigned TX_INTERVAL = 50;                                            // Sendeintervall in Sekunden     50 entspricht ca. 60 Sekunden Sendezyklus
 
 // Pin mapping
-const lmic_pinmap lmic_pins = {
+const lmic_pinmap lmic_pins = {                                             // Pin mapping zum LoRaWAN-TRX-Modul
     .nss = 18,
-    .rxtx = LMIC_UNUSED_PIN,
+    .rxtx = LMIC_UNUSED_PIN,                                                // gilt für TTGO LORA32  T3_V1.6   20210104 & 20180606
     .rst = 5,
     .dio = {26, 33, 32},
 };
 
+
+
+/*********************************
+ * Event-Handler
+ */
 void onEvent (ev_t ev) {
-    Serial.print(os_getTime());
-    Serial.print(": ");
+    
+//    Serial.print(os_getTime());
+//    Serial.print(": ");
     switch(ev) {
         case EV_SCAN_TIMEOUT:
             Serial.println(F("EV_SCAN_TIMEOUT"));
@@ -58,12 +73,18 @@ void onEvent (ev_t ev) {
         case EV_JOINING:
             Serial.println(F("EV_JOINING"));
             break;
-        case EV_JOINED:
+        case EV_JOINED:                                    
             Serial.println(F("EV_JOINED"));
 
             // Disable link check validation (automatically enabled
             // during join, but not supported by TTN at this time).
             LMIC_setLinkCheckMode(0);
+            for( i = 0; i < 20; i++ ) {                                                                 // nach erfolgreichem Join wird 20x kurz geblinkt
+              digitalWrite( LED_BUILTIN, HIGH );  
+              delay( 100 );
+              digitalWrite( LED_BUILTIN, LOW );  
+              delay( 100 );
+            }                          
             break;
         case EV_RFU1:
             Serial.println(F("EV_RFU1"));
@@ -84,7 +105,14 @@ void onEvent (ev_t ev) {
               Serial.println(LMIC.dataLen);
               Serial.println(F(" bytes of payload"));
             }
-            // Schedule next transmission
+            for( i = 0; i < 2; i++ ) {                                                                // nach Aussendung kurz blinken
+              digitalWrite( LED_BUILTIN, HIGH );  
+              delay( 1000 );
+              digitalWrite( LED_BUILTIN, LOW );  
+              delay( 1000 );
+            }                          
+
+            // Schedule next transmission           
             os_setTimedCallback(&sendjob, os_getTime()+sec2osticks(TX_INTERVAL), do_send);
             break;
         case EV_LOST_TSYNC:
@@ -103,53 +131,59 @@ void onEvent (ev_t ev) {
         case EV_LINK_ALIVE:
             Serial.println(F("EV_LINK_ALIVE"));
             break;
-         default:
+         default:         
             Serial.println(F("Unknown event"));
             break;
     }
 }
 
+/*****************************************
+ * LoRaWAN-Datenpaket aussenden
+ */
 void do_send(osjob_t* j){
+      
     // Check if there is not a current TX/RX job running
     if (LMIC.opmode & OP_TXRXPEND) {
         Serial.println(F("OP_TXRXPEND, not sending"));
     } else {
         // Prepare upstream data transmission at the next possible time.
+        digitalWrite( LED_BUILTIN, HIGH );                               
         LMIC_setTxData2(1, mydata, sizeof(mydata)-1, 0);
         Serial.println(F("Packet queued"));
-       i++;
-      mydata[ 0 ] = i;
-      mydata[ 1 ] = random( 0, 0xFF );
-  
-      int laufzeit = millis() / 1000;    
-      mydata[ 2 ] = laufzeit >> 8;
-      mydata[ 3 ] = laufzeit & 0xFF;
-
-
+        digitalWrite( LED_BUILTIN, LOW );
     }
     // Next TX is scheduled after TX_COMPLETE event.
 }
 
+
 void setup() {
+
+    pinMode(LED_BUILTIN, OUTPUT);
+    digitalWrite(LED_BUILTIN, LOW );
+  
     Serial.begin(115200);
     Serial.println(F("Starting"));
 
-    #ifdef VCC_ENABLE
-    // For Pinoccio Scout boards
-    pinMode(VCC_ENABLE, OUTPUT);
-    digitalWrite(VCC_ENABLE, HIGH);
-    delay(1000);
-    #endif
-
-    // LMIC init
     os_init();
-    // Reset the MAC state. Session and pending data transfers will be discarded.
     LMIC_reset();
 
-    // Start job (sending automatically starts OTAA too)
     do_send(&sendjob);
 }
 
 void loop() {
     os_runloop_once();
 }
+
+
+/******************************************************
+ * Payload-Formatter (Java-Script)
+ 
+function Decoder(bytes, port) {
+  
+  var decode = {};
+
+  decode.bytes = bytes;
+
+  return decode;
+}
+*/
