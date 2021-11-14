@@ -13,7 +13,7 @@ static const u1_t PROGMEM APPEUI[8]={ 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 
 void os_getArtEui (u1_t* buf) { memcpy_P(buf, APPEUI, 8);}
 
 // This should also be in little endian format, see above.
-static const u1_t PROGMEM DEVEUI[8]={ 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
+static const u1_t PROGMEM DEVEUI[8]={ 0x0D, 0x81, 0x04, 0xD0, 0x7E, 0xD5, 0xB3, 0x70 };
 void os_getDevEui (u1_t* buf) { memcpy_P(buf, DEVEUI, 8);}
 
 // This key should be in big endian format (or, since it is not really a
@@ -23,12 +23,13 @@ void os_getDevEui (u1_t* buf) { memcpy_P(buf, DEVEUI, 8);}
 static const u1_t PROGMEM APPKEY[16] = { 0xB8, 0x06, 0x9A, 0x45, 0x85, 0x47, 0x3D, 0x47, 0x2C, 0xFD, 0x88, 0x93, 0xD4, 0x86, 0x22, 0xCA };
 void os_getDevKey (u1_t* buf) {  memcpy_P(buf, APPKEY, 16);}
 
-static uint8_t mydata[] = "";
+static uint8_t mydata[] = " ";
+int i = 0;
 static osjob_t sendjob;
 
 // Schedule TX every this many seconds (might become longer due to duty
 // cycle limitations).
-const unsigned TX_INTERVAL = 60;
+const unsigned TX_INTERVAL = 30;
 
 // Pin mapping
 const lmic_pinmap lmic_pins = {
@@ -116,8 +117,14 @@ void do_send(osjob_t* j){
         // Prepare upstream data transmission at the next possible time.
         LMIC_setTxData2(1, mydata, sizeof(mydata)-1, 0);
         Serial.println(F("Packet queued"));
-        i++;
-        mydata[ 0 ] = i;
+       i++;
+      mydata[ 0 ] = i;
+      mydata[ 1 ] = random( 0, 0xFF );
+  
+      int laufzeit = millis() / 1000;    
+      mydata[ 2 ] = laufzeit >> 8;
+      mydata[ 3 ] = laufzeit & 0xFF;
+
 
     }
     // Next TX is scheduled after TX_COMPLETE event.
