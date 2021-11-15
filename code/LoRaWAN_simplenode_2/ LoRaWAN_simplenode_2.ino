@@ -45,7 +45,7 @@ const unsigned TX_INTERVAL = 50;                                            // S
 const lmic_pinmap lmic_pins = {                                             // Pin mapping zum LoRaWAN-TRX-Modul
     .nss = 18,
     .rxtx = LMIC_UNUSED_PIN,                                                // gilt für TTGO LORA32  T3_V1.6   20210104 & 20180606
-    .rst = 5,
+    .rst = 23,
     .dio = {26, 33, 32},
 };
 
