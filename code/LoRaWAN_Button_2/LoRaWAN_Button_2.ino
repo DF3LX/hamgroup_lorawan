@@ -1,14 +1,14 @@
 /****************************************
   DARC-HamGroup LoRaWAN
 
-  Button-Node-2
+  Button-Node-2 ( Mehr-Taster-Node ) 
 
-  ein Taster bzw. Schalter löst bei Betätigung eine LoRaWAN-Aussendung aus
+  mehrere Taster bzw. Schalter lösen bei Betätigung eine LoRaWAN-Aussendung aus
   nach der letzten Aussendung wird nach einer einstellbaren Zeit zyklisch eine Statusmeldung ausgesendet
   
   Based on the LoRaWAN example from Thomas Telkamp and Matthijs 
 
-  20.12.2021  Jürgen, DL8MA
+  27.12.2021  Jürgen, DL8MA
 
   http://www.p37.de/LoRaWAN
 
@@ -30,18 +30,18 @@ static const u1_t PROGMEM APPEUI[8]={ 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 
 void os_getArtEui (u1_t* buf) { memcpy_P(buf, APPEUI, 8);}
 
 // This should also be in little endian format, see above.
-static const u1_t PROGMEM DEVEUI[8]={ 0xBA, 0xA2, 0x04, 0xD0, 0x7E, 0xD5, 0xB3, 0x70 };
+static const u1_t PROGMEM DEVEUI[8]={ = hier eintragen = };
 void os_getDevEui (u1_t* buf) { memcpy_P(buf, DEVEUI, 8);}
 
 // This key should be in big endian format (or, since it is not really a
 // number but a block of memory, endianness does not really apply). In
 // practice, a key taken from ttnctl can be copied as-is.
 // The key shown here is the semtech default key.
-static const u1_t PROGMEM APPKEY[16] = { 0x39, 0x45, 0x18, 0xE5, 0x2D, 0x9E, 0x77, 0x4B, 0x50, 0xB8, 0x88, 0x12, 0xE9, 0xAD, 0x85, 0x05 };
+static const u1_t PROGMEM APPKEY[16] = { = hier eintragen = };
 void os_getDevKey (u1_t* buf) {  memcpy_P(buf, APPKEY, 16);}
 
 
-unsigned TX_INTERVAL = 30;                                                 // Sendeintervall in Sekunden / z.B. 3600 Sekunden ( = 1h ) Sendezyklus
+unsigned TX_INTERVAL = 60;                                                 // Sendeintervall in Sekunden / z.B. 3600 Sekunden ( = 1h ) Sendezyklus
 
 static uint8_t mydata[] = " ";                                             // Feld für Hex-Werte die ausgesendet werden
 static osjob_t sendjob;
@@ -50,17 +50,11 @@ int i = 0;
 long sendeZeit = 0;                                                         // für Anzeige der nächsten Aussendung / Count-Down-Zähler im Display
 long displayPause = 0;                                                      // Refresh-Rate für das OLED-Display 
 long zeitspanne = 0;                                                        // für die Anzeige der Statusmeldungen auf dem Display
-int anzahl = 0;                                                             // Anzahl der Zeichen für Displayausgabe
 String status = "";
 
-const int buttonPin1 = 36;                                                  // Eingang für Button 1 GPIO36
-const int buttonPin2 = 39;                                                  // Eingang für Button 2 GPIO39
-const int buttonPin3 = 34;                                                  // Eingang für Button 3 GPIO34
-
-int buttonState1 = 0;
-int buttonState2 = 0;
-int buttonState3 = 0;
-
+const int buttonPin[] = { 36, 39, 34 };                                     // Pins für Kontakte
+int kontaktAnzahl = ( sizeof( buttonPin ) / 4 );                            // Anzahl der definierten Pins
+int buttonState[] = { 0, 0, 0 };                                            // hier legen wir die Statis der Kontakte ab
 int txAktiv = 0;
 
 // Pin mapping
@@ -70,7 +64,6 @@ const lmic_pinmap lmic_pins = {                                             // P
     .rst = 23,
     .dio = {26, 33, 32},
 };
-
 
 
 /*********************************
@@ -126,17 +119,6 @@ void onEvent (ev_t ev) {
             Serial.println(F("EV_TXCOMPLETE (includes waiting for RX windows)"));
             txAktiv = 0;                                                                              // Freigabe für die nächste Aussendung
             status = "TX ok";
-
-Serial.print( "txAktiv: " );
-Serial.print( txAktiv );
-Serial.println();
-
-Serial.print( mydata[ 0 ], BIN );
-Serial.println( mydata[ 1 ], BIN );
-
-Serial.print( " >> " );
-Serial.println( status );
-
             
             if (LMIC.txrxFlags & TXRX_ACK)
               Serial.println(F("Received ack"));
@@ -153,7 +135,8 @@ Serial.println( status );
               delay( 100 );
             }           
             // Schedule next transmission           
-            os_setTimedCallback(&sendjob, os_getTime()+sec2osticks(TX_INTERVAL), do_send);         
+            os_setTimedCallback(&sendjob, os_getTime()+sec2osticks(TX_INTERVAL), do_send); 
+                    
             break;
         case EV_LOST_TSYNC:
             Serial.println(F("EV_LOST_TSYNC"));
@@ -196,25 +179,26 @@ void do_send(osjob_t* j){
     // Next TX is scheduled after TX_COMPLETE event.
 }
 
-
 void setup() {
-
+    int i = 0;
+    
     TX_INTERVAL -= 6;                                                                               // Korrektur des Sendeintervals ( einige Sekunden für Sendevorgang abziehen)
 
     pinMode(LED_BUILTIN, OUTPUT);                                                                   // eingebaute LED (grün) für Status-Blinken
     digitalWrite(LED_BUILTIN, LOW );
-    pinMode( buttonPin1, INPUT );                                                                   // Pin für Taster 1
-    pinMode( buttonPin2, INPUT );                                                                   // Pin für Taster 2
-    pinMode( buttonPin3, INPUT );                                                                   // Pin für Taster 3
 
-    buttonState1 = digitalRead(buttonPin1);
-    buttonState2 = digitalRead(buttonPin2);
-    buttonState3 = digitalRead(buttonPin3);
-
-    mydata[ 0 ] = buttonState1 << 4;                                                                 // Datenfeld einrichten
-    
     Serial.begin(115200);
     Serial.println(F("Starting"));
+  
+    for( i = 0; i < kontaktAnzahl; i++ ) {  
+      pinMode( buttonPin[ i ], INPUT );                                                             // Pin für Taster    
+      buttonState[ i ] = digitalRead(buttonPin[ i ]);
+    }
+
+    mydata[ 0 ] = 0;                                                                                // 1 Byte ( = 2 Nibble )
+    for( i = 0; i < kontaktAnzahl; i++ ) {  
+      mydata[ 0 ] = mydata[ 0 ] | buttonState[ i ] << ( 4 + i );                                    // 1. Nibble des Bytes: aus den Kontakte zusammenbauen
+    }
 
     display.init();                                                                                 // Konfiguration Display
     display.flipScreenVertically();
@@ -230,85 +214,42 @@ void setup() {
 
 void loop() {
     String str = "";
+    int flag = 0;
     
     os_runloop_once();
 
-   
-   if( !txAktiv ) {                                                                                // Aussendungen wieder freigegeben?
-
-Serial.println( "----------");
-      
-      if( ( buttonState1 != digitalRead(buttonPin1 ) ) or 
-          ( buttonState2 != digitalRead(buttonPin2 ) ) or 
-          ( buttonState3 != digitalRead(buttonPin3 ) ) ) {                                          // mind 1 Kontakt wurde geöffnet bzw. geschlossen
-        buttonState1 = digitalRead(buttonPin1);
-        buttonState2 = digitalRead(buttonPin2);
-        buttonState3 = digitalRead(buttonPin3);
+    if( !txAktiv ) {                                                                                // Aussendungen wieder freigegeben?
+      flag = 0;
+      for( i = 0; i < kontaktAnzahl; i++ ) {                                                        // prüfen ob Kontakte geöffnet bzw. geschlossen wurden
+        if( buttonState[ i ] != digitalRead(buttonPin[ i ]) )
+          flag = 1; 
+      } 
+      if( flag ) {       
+                                                                                          
+        for( i = 0; i < kontaktAnzahl; i++ ) {                                                      // alle Kontakte einlesen und merken
+          buttonState[ i ] = digitalRead(buttonPin[ i ]);  
+        } 
 
         txAktiv = 1;                                                                                // neue LoRaWAN-Aussendung
-        
-        buttonState1 = buttonState1 << 4;
-        buttonState2 = buttonState2 << 5;
-        buttonState3 = buttonState3 << 6;        
 
-
-Serial.print( "### ");
-Serial.println ( buttonState1 == digitalRead(buttonPin1 ) );
-/*
-Serial.println( "xxxxx" );
-Serial.println( digitalRead(buttonPin1 ), BIN );
-Serial.println( digitalRead(buttonPin2 ), BIN );
-Serial.println( digitalRead(buttonPin3 ), BIN );
-Serial.println( "---" );        
-
-
-
-Serial.println( "xxxxx" );
-Serial.println( buttonState1, BIN );
-Serial.println( buttonState2, BIN );
-Serial.println( buttonState3, BIN );
-Serial.println( "---" );        
-*/
-        mydata[ 0 ] = buttonState1;                                                                 // 1. Nibble des Bytes: Kontaktzustand       
-Serial.println( mydata[ 0 ], BIN );
-
-        mydata[ 0 ] = mydata[ 0 ] | buttonState2;
-Serial.println( mydata[ 0 ], BIN );
-
-        mydata[ 0 ] = mydata[ 0 ] | buttonState3;        
-Serial.println( mydata[ 0 ], BIN );
-
+        mydata[ 0 ] = 0;                                                                            // 1 Byte ( = 2 Nibble )
+        for( i = 0; i < kontaktAnzahl; i++ ) {  
+          mydata[ 0 ] = mydata[ 0 ] | buttonState[ i ] << ( 4 + i );                                // 1. Nibble des Bytes: aus den Kontakte zusammenbauen
+        }       
         mydata[ 0 ] = mydata[ 0 ] | 0x01;                                                           // 2. Nibble des Bytes: Trigger-Info = 1 ( Kontakt geändert )
-
-Serial.println( mydata[ 0 ], BIN );
-
-
-Serial.println( "xxxxx" );
-
     
         LMIC_setTxData2(1, mydata, sizeof(mydata)-1, 0);                                            // Daten für die Aussendung einstellen und Aussendung starten
 
-        Serial.print( "Flanke " );
-        Serial.print( buttonState1 );                                                              // für Anschauungszwecke über serielle Schnittstelle ausgeben
-        Serial.print( " " );                                                              // für Anschauungszwecke über serielle Schnittstelle ausgeben
-        Serial.print( buttonState2 );                                                              // für Anschauungszwecke über serielle Schnittstelle ausgeben
-        Serial.print( " " );                                                              // für Anschauungszwecke über serielle Schnittstelle ausgeben
-        Serial.println( buttonState3 );                                                              // für Anschauungszwecke über serielle Schnittstelle ausgeben
-
+        Serial.print( "mind. ein Kontakt betätigt " );
         Serial.print( "Payload: " );
         str = hexString( mydata, sizeof( mydata ) - 1 );     
         Serial.println( str );     
+        Serial.println();     
       }
-    } else {
-        mydata[ 0 ] = buttonState1;                                                                 // 1. Nibble des Bytes: Kontaktzustand       
-        mydata[ 0 ] = mydata[ 0 ] | buttonState2;
-        mydata[ 0 ] = mydata[ 0 ] | buttonState3;        
-        mydata[ 0 ] = mydata[ 0 ] & 0xF0;                                                                                                     // 2. Nibble des Bytes:   Trigger-Info = 0 ( kein Trigger )
+    } else {       
+      mydata[ 0 ] = mydata[ 0 ] & 0xF0;      
     }
-
-display.drawString( 55, 44, String( txAktiv ) ); 
-display.display();
-    
+                                                                                                    
     if( ( displayPause + 1000 ) < millis()  ) {                                                     // Auffrischung des Displays nur alle Sekunde
       str = hexString( mydata, sizeof( mydata ) - 1 );     
       display.clear();
@@ -317,10 +258,14 @@ display.display();
       display.drawString( 0, 22, String( zeitspanne ) );                                            // Count-Down-Zähler
       if( zeitspanne > 60 )
         display.drawString( 55, 22, "( " + String( zeitspanne / 60 ) + " min )" );
-      display.drawString( 0, 44, status );                                                          // Status-Meldung      
-            
-      display.drawString( 48, 0, "Taster: " );                                                      // Tasterstatus
-      display.drawString( 100, 0, String( buttonState1 ) + String( buttonState2 ) + String( buttonState3 ) );      
+      display.drawString( 0, 44, status );                                                          // Status-Meldung                  
+      display.drawString( 30, 0, "Kontakte: " );                                                    // Tasterstatus
+
+      str = "";                                                                                     
+      for( i = 0; i < kontaktAnzahl; i++ ) {  
+        str = str + String( buttonState[ i ] ); 
+      }
+      display.drawString( 100, 0, str );      
       display.display();
       
       int statusDisplayZeit = 60;
