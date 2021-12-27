@@ -304,11 +304,13 @@ function Decoder(bytes, port) {
   
   var decode = {};
 
-  decode.button = ( bytes[ 0 ] >> 4 );        // Tasterstatus
+  decode.button0 = ( bytes[ 0 ] >> 4 ) & 0x01;  // Tasterstatus 0
+  decode.button1 = ( bytes[ 0 ] >> 5 ) & 0x01;  // Tasterstatus 1
+  decode.button2 = ( bytes[ 0 ] >> 6 ) & 0x01;  // Tasterstatus 2
 
-  decode.buttonTrigger = bytes[ 0 ] & 0x0F;   // Trigger = Taster betätigt
+  decode.buttonTrigger = bytes[ 0 ] & 0x0F;     // Trigger = Taster betätigt
 
-  decode.bytes = bytes;                       // nur zur Anschauung
+  decode.bytes = bytes;                         // nur zur Anschauung
 
   return decode;
 }
