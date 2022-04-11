@@ -9,7 +9,7 @@
  *	29.01.2022	JM	vereinfacht und für Workshop angepasst 
  */
 
-include( "i/include.php" );                                                     // Datenbankanbindung und -funktionen
+include("i/include.php");                                                     // Datenbankanbindung und -funktionen
 
 $json_str = trim( file_get_contents('php://input') );                           // via TTN-Webhook übertragener JSON-String holen
 

@@ -5,7 +5,7 @@
  * 02.12.2017   JM  auf PDO umgestellt 
  *
  */
-include ("config.php");
+include("config.php");
 
 $db = new mysqlMapper( $dbZugangsdaten );
 

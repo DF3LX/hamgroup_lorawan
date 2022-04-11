@@ -29,7 +29,7 @@
 error_reporting(E_ALL ^ E_NOTICE);
 ini_set('display_errors', 1);
 
-include( "i/include.php" );
+include("i/include.php");
 
 $devEUI = substr( $_REQUEST[ "devEUI" ], 0, 40 );															// DevEUI des Nodes der angezeigt werden soll
 
