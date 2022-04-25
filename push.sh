@@ -1,5 +1,5 @@
 #!/bin/bash
-echo 'Push nach Github und Bitbucket'
+echo -e '\033[31mPush nach Github und Bitbucket\033[31m'
 git push origin
 git push DARC
-echo 'Push nach Github und Bitbucket abgeschlossen'
+echo -e '\033[31mPush nach Github und Bitbucket abgeschlossen\033[31m'
